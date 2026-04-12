@@ -1,101 +1,155 @@
-<div align="center">
-
 # ARC-NLprogram
 
-Solving ARC (Abstraction and Reasoning Corpus) tasks with large language models and natural-language programs.
+An ARC solver that emulates a small virtual machine to execute natural-language programs over grids. Instead of a single monolithic LLM call the solver decomposes execution into three cooperating LLM-powered components that iteratively step through the program.
 
-</div>
+## Documents
 
----
+- [Defense Presentation](documents/arc_nlprogram_defense.pdf)
+- [Thesis](documents/arc_nlprogram_thesis.pdf)
 
-## Overview
-
-This repository is the **open-source branch** of an ongoing research project that explores different strategies for using LLMs to solve ARC tasks. Each task presents a small number of input–output grid examples from which a transformation rule must be inferred and applied to a new test input.
-
-Two independent solver implementations are provided here. They share the same goal but take fundamentally different approaches:
-
-| | v0 — Modular Pipeline | v1 — Interpreter-Executor |
-|-|----------------------|--------------------------|
-| **Approach** | Decompose solving into abstraction, generation, execution, and evaluation stages | Emulate a virtual machine that iteratively steps through a natural-language program |
-| **Configuration** | Hydra YAML | CLI arguments |
-| **Key components** | Abstractor, Program Generator, Program Executor, Judge, Evaluator | Interpreter, Executor, PC Updater |
-
-## Repository Structure
+## Repository Layout
 
 ```
-ARC-NLprogram/
-├── README.md               ← you are here
-├── v0/                     ← Modular pipeline solver (Solver Group A)
-│   ├── README.md
-│   ├── main.py             ← Hydra CLI entrypoint
-│   ├── requirements.txt
-│   ├── config/             ← Hydra YAML configs
-│   └── arc/                ← Components, evaluator, solvers, utilities
-└── v1/                     ← Interpreter-executor solver (Solver Group B)
-    ├── README.md
-    ├── run.py              ← CLI entrypoint
-    ├── requirements.txt
-    ├── solver/             ← Interpreter, executor, PC updater, runner
-    └── arc/                ← Data loader, LLM provider, utilities
+arc/                         # Python source package
+├── __init__.py
+├── __main__.py              # CLI entrypoint (python -m arc)
+├── llm/                     # LLM provider + model config
+├── data/
+│   └── ARCTask.py           # Task data loader
+├── solver/
+│   ├── interpreter.py       # Instruction → atomic action
+│   ├── executor.py          # Action dispatch (Python + LLM)
+│   ├── pc_updater.py        # Program-counter logic
+│   └── runner.py            # Orchestration loop
+├── log/
+│   ├── step_logger.py       # Structured execution logger
+│   └── interactive.py       # Interactive shell for log editing
+├── vis/
+│   └── report.py            # PDF visualisation report
+└── utils/
+    ├── answer_parsing.py
+    ├── plotting.py
+    └── prompt_builder.py
+
+documents/                   # Research documents
+├── arc_nlprogram_defense.pdf  # Defense presentation slides
+└── arc_nlprogram_thesis.pdf   # Thesis
+
+examples/                    # Bash entrypoint scripts
+└── run_2204b7a8.sh
+
+tasks/                       # NL-program instructions per task
+└── 2204b7a8/
+    └── instruction.txt
+
+data/                        # ARC dataset files
+├── arc-prize-2024/
+├── arc-prize-2025/
+└── meta_data/
 ```
 
-Each subfolder is self-contained with its own dependencies, entrypoint, and documentation. Refer to the individual README files for setup and usage instructions:
+## Architecture
 
-- [`v0/README.md`](v0/README.md)
-- [`v1/README.md`](v1/README.md)
+```
+NL Program (multi-line instruction text)
+  │
+  ├─► Interpreter   — parse current line → atomic action
+  │
+  ├─► Executor      — execute action (Python or LLM)
+  │
+  └─► PC Updater    — advance program counter to next line
+         │
+         └─── loop until RETURN or max_steps
+```
 
-## What Is Open-Sourced
+| Component       | Role                                                     |
+|-----------------|----------------------------------------------------------|
+| **Interpreter** | Reads the current instruction line and emits an action   |
+| **Executor**    | Carries out the action and returns a result              |
+| **PC Updater**  | Decides which line to execute next                       |
 
-- **Architecture and interfaces** — all component base classes, registries, and solver orchestration logic
-- **Pipeline implementations** — end-to-end flow from task loading through solving to evaluation
-- **Evaluation metrics** — pointwise accuracy, success rate, weighted F1, ARGA weighted error
-- **Control-flow logic** — program-counter management, structure parsing
-- **Utilities** — answer parsing, prompt building, grid plotting, solver helpers
-- **Configuration system** — Hydra YAML structure (v0) and CLI arguments (v1)
+## Setup
 
-## What Is Not Open-Sourced
+```bash
+pip install -r requirements.txt
+```
 
-The following are replaced with clearly marked redacted placeholders (`[REDACTED — closed-source prompt]` or stubs):
+### Prerequisites
 
-- **LLM prompts** — all system prompts and prompt templates used for abstraction, generation, execution, judging, interpretation, and PC-updating
-- **Pydantic structured-output schemas** — model definitions used for LLM response parsing
-- **Model configurations** — specific model names, provider endpoints, and parameter settings
-- **Task data** — ARC dataset files are not bundled (download from [ARC Prize](https://arcprize.org/))
+1. **API key** — `export OPENROUTER_API_KEY="sk-..."`.
+2. **Model config** — add entries to `arc/llm/config.py`.
+3. **NL program** — a `.txt` file in `tasks/<task_id>/instruction.txt`.
 
 ## Usage
 
-### v0 — Modular Pipeline
+### Quick start
 
 ```bash
-cd v0
-pip install -r requirements.txt
-
-export OPENROUTER_API_KEY=<your-key>
-# Add model entries to arc/components/llm/config.py
-
-python main.py experiment=sample solver_type=monolithic experiment_name=my_run
+./examples/run_2204b7a8.sh
 ```
 
-### v1 — Interpreter-Executor
+### Manual
 
 ```bash
-cd v1
-pip install -r requirements.txt
-
-export OPENROUTER_API_KEY=<your-key>
-# Add model entries to arc/components/llm/config.py
-
-python run.py \
+python -m arc \
     --task_id 2204b7a8 \
-    --data_folder /path/to/arc-data \
-    --instruction program.txt \
-    --max_steps 500 \
-    --output result.json
+    --data_folder data/arc-prize-2024 \
+    --instruction tasks/2204b7a8/instruction.txt \
+    --log_dir results/2204b7a8 \
+    --report results/2204b7a8/report.pdf \
+    --output results/2204b7a8/output.json \
+    --max_steps 500
 ```
 
-## News
+### Resume from checkpoint
 
-- **2025-03** — Initial open-source release with v0 (modular pipeline) and v1 (interpreter-executor) solvers.
+```bash
+python -m arc \
+    --task_id 2204b7a8 \
+    --data_folder data/arc-prize-2024 \
+    --instruction tasks/2204b7a8/instruction.txt \
+    --resume results/2204b7a8/2204b7a8_log.json \
+    --log_dir results/2204b7a8 \
+    --max_steps 500
+```
+
+### Interactive log editor
+
+```bash
+python -m arc.log.interactive results/2204b7a8/2204b7a8_log.json
+```
+
+Commands: `list`, `show N`, `grid N`, `vars N`, `pc N`, `set_var N name value`,
+`set_pc N line_idx`, `set_instruction file`, `truncate N`, `save`, `quit`.
+
+### PDF report
+
+```bash
+python -m arc.vis.report results/2204b7a8/2204b7a8_log.json report.pdf [max_steps]
+```
+
+## CLI Arguments
+
+| Flag              | Required | Description                              |
+|-------------------|----------|------------------------------------------|
+| `--task_id`       | Yes      | ARC task ID to solve                     |
+| `--data_folder`   | Yes      | Path to the ARC data directory           |
+| `--instruction`   | Yes      | Path to the NL program `.txt` file       |
+| `--model_key`     | No       | Key from `MODEL_CONFIGURATIONS`          |
+| `--dataset_set`   | No       | `training` (default) or `evaluation`     |
+| `--max_steps`     | No       | Safety limit on steps (default: 500)     |
+| `--time_sleep`    | No       | Seconds between LLM calls (default: 1)  |
+| `--output`        | No       | Path to write the output grid as JSON    |
+| `--log_dir`       | No       | Directory to save the execution log      |
+| `--resume`        | No       | Path to a log JSON to resume from        |
+| `--report`        | No       | Path to save a PDF visualisation report  |
+
+## Development History
+
+Earlier versions of this solver are available in separate branches:
+
+- **v0** — Modular pipeline solver (abstraction → generation → execution → evaluation)
+- **v1** — Early interpreter-executor architecture (flat package layout)
 
 ## License
 

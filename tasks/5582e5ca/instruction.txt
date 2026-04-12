@@ -1,0 +1,21 @@
+color = <the color value that mostly appear in the grid>
+row = 1
+While (True) {
+    If ($row > $grid_height) {
+        break
+    }
+    Else {
+        col = 1
+        While (True) {
+            If ($col > $grid_width) {
+                break
+            }
+            Else {
+                grid[$row][$col] = $color
+            }
+            col = $col + 1
+        }
+    }
+    row = $row + 1
+}
+return

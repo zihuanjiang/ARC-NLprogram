@@ -1,0 +1,30 @@
+row = 1
+While (True) {
+    If ($row > $grid_height) {
+        break
+    }
+    Else {
+        color_1 = <the color value of the first cell in row $row> 
+        If ($color_1 != 0) {
+            color_2 = <the color value of the last cell in row $row> 
+            left = '2'
+            right = '10'
+            While (True) {
+                If ($left >= 6) {
+                    break
+                }
+                Else {
+                    grid[$row][$left] = $color_1
+                    grid[$row][$right] = $color_2
+                    left = $left + 1
+                    right = $right - 1
+                }
+            }
+            grid[$row][6] = 5
+        }
+        Else {
+        }
+        row = $row + 1
+    }
+}
+return

@@ -1,0 +1,43 @@
+color = 1
+While (True) {
+    num = <number of cells in the $grid with value $color>
+    If ($num == 2) {
+        row_1 = <1-indexed row index of a row having value $color>
+        col_1 = <1-indexed col index of a col having value $color with row index = $row_1>
+        row_2 = <1-indexed row index of another row != $row_1 having value $color>
+        col_2 = <1-indexed col index of a col having value $color with row index = $row_2>
+        If ($row_1 < $row_2) {
+            row_step = 1
+        }
+        Else {
+            row_step = -1
+        }
+        If ($col_1 < $col_2) {
+            col_step = 1
+        }
+        Else {
+            col_step = -1
+        }
+        r = $row_1 + $row_step
+        c = $col_1 + $col_step
+        While (True) {
+            If ($r == $row_2) {
+                break
+            }
+            Else {
+                grid[$r][$c] = $color
+                r = $r + $row_step
+                c = $c + $col_step
+            }
+        }
+    }
+    Else {
+    }
+    color = $color + 1
+    If ($color > 9) {
+        break
+    }
+    Else {
+    }
+}
+return

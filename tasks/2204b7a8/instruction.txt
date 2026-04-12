@@ -1,0 +1,34 @@
+If (<first row contains at least one black cell>) { 
+    orientation = 'vertical' 
+    color_1 = <the same color value of the first column> 
+    color_2 = <the same color value of the last column> 
+    max_distance = $grid_width 
+} 
+Else { 
+    orientation = 'horizontal' 
+    color_1 = <the same color value of the first row> 
+    color_2 = <the same color value of the last row> 
+    max_distance = $grid_height 
+} 
+While (True) {
+    If (<exists (row, col) such that grid[row][col] == 3>) {
+        row = <row index of a row having value 3> 
+        col = <col index of a col having value 3 with row index = $row> 
+    } 
+    Else { 
+        break 
+    } 
+    If ($orientation == 'vertical') {
+        left = $col + $col - 2 
+    } 
+    Else {
+        left = $row + $row - 2 
+    } 
+    If ($left >= $max_distance) {
+        grid[$row][$col] = $color_2 
+    } 
+    Else { 
+        grid[$row][$col] = $color_1 
+    } 
+} 
+return

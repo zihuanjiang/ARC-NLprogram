@@ -1,8 +1,0 @@
-openai
-omegaconf
-hydra-core
-pydantic
-numpy
-matplotlib
-Pillow
-pyyaml
