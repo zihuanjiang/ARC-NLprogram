@@ -1,0 +1,17 @@
+# Base configuration for TypedSequentialSolver
+# This config can be updated via command-line arguments when launching experiments
+
+use_typed_executor: false
+program_gen_config:
+  model_key: "your-model-key"
+  include_train_input: true
+  include_test_input: true
+  include_abstraction: false
+  include_image: true
+
+executor_config:
+  model_key: "your-model-key"
+  include_train_input: true
+  include_test_input: true
+  include_nl_program: true
+  test_train_accuracy: false  # If true, also generate outputs for training examples

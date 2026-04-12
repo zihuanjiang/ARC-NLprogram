@@ -1,0 +1,11 @@
+.DS_Store
+.venv/
+.env
+.vscode/
+__pycache__/
+*.pyc
+*.log
+outputs/
+experiments/
+experimental/
+deprecated/
